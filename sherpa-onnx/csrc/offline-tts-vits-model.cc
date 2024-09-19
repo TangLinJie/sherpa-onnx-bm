@@ -12,6 +12,10 @@
 #include "sherpa-onnx/csrc/macros.h"
 #include "sherpa-onnx/csrc/onnx-utils.h"
 #include "sherpa-onnx/csrc/session.h"
+#include "bmruntime_cpp.h"
+#include "bmruntime_interface.h"
+
+using namespace bmruntime;
 
 namespace sherpa_onnx {
 
@@ -24,6 +28,23 @@ class OfflineTtsVitsModel::Impl {
         allocator_{} {
     auto buf = ReadFile(config.vits.model);
     Init(buf.data(), buf.size());
+    // context
+    dev_id = config_.devid;
+    m_ctx = std::make_unique<bmruntime::Context>(dev_id);
+    std::string bmodel_path = config_.bmodel_path;
+    assert(BM_SUCCESS == m_ctx->load_bmodel(bmodel_path.c_str()));
+
+    // network
+    std::vector<const char*> net_names;
+    m_ctx->get_network_names(&net_names);
+    m_net = std::make_unique<bmruntime::Network>(*m_ctx, net_names[0], 0);
+    m_handle = m_ctx->handle();
+    m_inputs = m_net->Inputs();
+    m_outputs = m_net->Outputs();
+    m_netinfo = m_ctx->get_network_info(net_names[0]);
+    struct bm_misc_info misc_info;
+    assert(BM_SUCCESS == bm_get_misc_info(m_handle, &misc_info));
+    is_soc = misc_info.pcie_soc_mode == 1;
   }
 
 #if __ANDROID_API__ >= 9
@@ -252,6 +273,39 @@ class OfflineTtsVitsModel::Impl {
     auto out =
         sess_->Run({}, input_names_ptr_.data(), inputs.data(), inputs.size(),
                    output_names_ptr_.data(), output_names_ptr_.size());
+    // bmrt
+    int64_t* floatarr = nullptr;
+    floatarr = inputs[0].GetTensorMutableData<int64_t>();
+    int64_t output_tensor_size = 1;
+    for (auto& it : x_shape)
+    {
+      output_tensor_size *= it;
+    }
+    std::vector<int>x_array(output_tensor_size);
+    for (unsigned i = 0; i < output_tensor_size; i++)
+    {
+      x_array[i] = floatarr[i];
+    }
+    int int_len = len;
+    m_inputs[0]->CopyFrom((void *)x_array.data());
+    m_inputs[1]->CopyFrom((void *)&int_len);
+    m_inputs[2]->CopyFrom((void *)scales.data());
+    assert(BM_SUCCESS == m_net->Forward(true));
+    int last_dim = m_outputs[0]->tensor()->shape.dims[3];
+    std::vector<float>bmrt_out(last_dim);
+    m_outputs[0]->CopyTo(bmrt_out.data());
+
+    /*
+    float* out_floatarr = out[0].GetTensorMutableData<float>();
+    std::vector<float>output_array(439552);
+    for (unsigned i = 0; i < 439552; i++)
+    {
+      output_array[i] = out_floatarr[i];
+    }
+    */
+    std::vector<int64_t> bmrt_out_shape{1, 1, 1, last_dim};
+    out[0] = Ort::Value::CreateTensor(
+        memory_info, bmrt_out.data(), last_dim, bmrt_out_shape.data(), 4);
 
     return std::move(out[0]);
   }
@@ -327,6 +381,16 @@ class OfflineTtsVitsModel::Impl {
 
   std::vector<std::string> output_names_;
   std::vector<const char *> output_names_ptr_;
+
+  // inference
+  int dev_id;
+  bm_handle_t m_handle;
+  const bm_net_info_t* m_netinfo;
+  bool is_soc;
+  std::unique_ptr<bmruntime::Context> m_ctx;
+  std::unique_ptr<bmruntime::Network> m_net;
+  std::vector<bmruntime::Tensor*> m_inputs;
+  std::vector<bmruntime::Tensor*> m_outputs;
 
   OfflineTtsVitsModelMetaData meta_data_;
 };

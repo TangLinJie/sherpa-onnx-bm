@@ -11,6 +11,12 @@ namespace sherpa_onnx {
 void OfflineTtsModelConfig::Register(ParseOptions *po) {
   vits.Register(po);
 
+  po->Register("bmodel_path", &bmodel_path,
+               "path to bmodel");
+
+  po->Register("devid", &devid,
+               "device id");
+
   po->Register("num-threads", &num_threads,
                "Number of threads to run the neural network");
 

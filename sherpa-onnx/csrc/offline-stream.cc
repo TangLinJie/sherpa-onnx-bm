@@ -245,7 +245,7 @@ class OfflineStream::Impl {
     for (int32_t i = 0; i != n; ++i) {
       float x = p[i];
       x = (x > amin) ? x : amin;
-      x = std::log10f(x) * multiplier;
+      x = std::log10(x) * multiplier;
 
       max_x = (x > max_x) ? x : max_x;
       p[i] = x;

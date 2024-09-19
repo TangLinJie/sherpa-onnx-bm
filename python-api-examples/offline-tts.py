@@ -119,6 +119,20 @@ def get_args():
     )
 
     parser.add_argument(
+        "--bmodel_path",
+        type=str,
+        default="bmodels/vits-piper-en_US-amy-low/en_US-amy-low_bm1684x_f32.bmodel",
+        help="Path to bmodel",
+    )
+
+    parser.add_argument(
+        "--devid",
+        type=int,
+        default=0,
+        help="device id",
+    )
+
+    parser.add_argument(
         "--max-num-sentences",
         type=int,
         default=2,
@@ -196,6 +210,8 @@ def main():
                 dict_dir=args.vits_dict_dir,
                 tokens=args.vits_tokens,
             ),
+            bmodel_path=args.bmodel_path,
+            devid=args.devid,
             provider=args.provider,
             debug=args.debug,
             num_threads=args.num_threads,

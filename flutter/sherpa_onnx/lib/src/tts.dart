@@ -36,6 +36,8 @@ class OfflineTtsVitsModelConfig {
 class OfflineTtsModelConfig {
   const OfflineTtsModelConfig({
     required this.vits,
+    required this.bmodel_path,
+    this.devid = 0,
     this.numThreads = 1,
     this.debug = true,
     this.provider = 'cpu',
@@ -43,10 +45,12 @@ class OfflineTtsModelConfig {
 
   @override
   String toString() {
-    return 'OfflineTtsModelConfig(vits: $vits, numThreads: $numThreads, debug: $debug, provider: $provider)';
+    return 'OfflineTtsModelConfig(vits: $vits, bmodel_path: $bmodel_path, devid: $devid, numThreads: $numThreads, debug: $debug, provider: $provider)';
   }
 
   final OfflineTtsVitsModelConfig vits;
+  final String bmodel_path;
+  final int devid;
   final int numThreads;
   final bool debug;
   final String provider;

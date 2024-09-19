@@ -112,6 +112,10 @@ set(sources
   wave-writer.cc
 )
 
+find_package(libsophon REQUIRED)
+include_directories(${LIBSOPHON_INCLUDE_DIRS})
+link_directories(${LIBSOPHON_LIB_DIRS})
+
 # speaker embedding extractor
 list(APPEND sources
   speaker-embedding-extractor-impl.cc
@@ -198,9 +202,9 @@ if(SHERPA_ONNX_ENABLE_GPU)
 endif()
 
 if(BUILD_SHARED_LIBS)
-  target_link_libraries(sherpa-onnx-core onnxruntime)
+  target_link_libraries(sherpa-onnx-core onnxruntime ${the_libbmlib.so} ${the_libbmrt.so})
 else()
-  target_link_libraries(sherpa-onnx-core ${onnxruntime_lib_files})
+  target_link_libraries(sherpa-onnx-core ${onnxruntime_lib_files} ${the_libbmlib.so} ${the_libbmrt.so})
 endif()
 
 if(NOT WIN32)

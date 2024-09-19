@@ -18,11 +18,13 @@ void PybindOfflineTtsModelConfig(py::module *m) {
 
   py::class_<PyClass>(*m, "OfflineTtsModelConfig")
       .def(py::init<>())
-      .def(py::init<const OfflineTtsVitsModelConfig &, int32_t, bool,
+      .def(py::init<const OfflineTtsVitsModelConfig &, const std::string, const int32_t, int32_t, bool,
                     const std::string &>(),
-           py::arg("vits"), py::arg("num_threads") = 1,
+           py::arg("vits"), py::arg("bmodel_path"), py::arg("devid") = 0, py::arg("num_threads") = 1,
            py::arg("debug") = false, py::arg("provider") = "cpu")
       .def_readwrite("vits", &PyClass::vits)
+      .def_readwrite("bmodel_path", &PyClass::bmodel_path)
+      .def_readwrite("devid", &PyClass::devid)
       .def_readwrite("num_threads", &PyClass::num_threads)
       .def_readwrite("debug", &PyClass::debug)
       .def_readwrite("provider", &PyClass::provider)
